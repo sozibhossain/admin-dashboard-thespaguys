@@ -83,7 +83,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell min-h-screen text-white">
       <div className="flex min-h-screen">
         <aside className="panel-gradient sticky top-0 hidden h-screen w-[312px] shrink-0 self-start border-r border-[#202020] px-6 py-8 lg:flex lg:flex-col">
-          <div className="px-2">
+          <div className="flex items-center justify-center">
             <Image
               src="/assets/logo.png"
               alt="Spa Guys"
@@ -172,8 +172,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         onClose={() => setLogoutOpen(false)}
         className="max-w-[592px] rounded-[24px] bg-white p-8 text-center text-black"
       >
-        <h2 className="text-[26px] font-semibold">Are you sure want to Log out?</h2>
-        <p className="mt-3 text-[16px] text-[#444444]">Tap log out from the dashboard.</p>
+        <h2 className="text-[26px] font-semibold text-white">Are you sure want to Log out?</h2>
+        <p className="mt-3 text-[16px] text-white">Tap log out from the dashboard.</p>
         <div className="mt-8 grid grid-cols-2 gap-4">
           <Button className="border-[#ff3030] text-[#ff3030]" onClick={() => setLogoutOpen(false)} variant="outline">
             Cancel

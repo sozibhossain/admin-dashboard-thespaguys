@@ -65,7 +65,7 @@ export function getApiErrorMessage(error: unknown) {
 }
 
 export const api = {
-  login: async (payload: { email: string; password: string }) =>
+  login: async (payload: { email: string; password: string; role: "admin" }) =>
     unwrap<AuthPayload>(await axiosInstance.post("/auth/login", payload)),
   forgotPassword: async (payload: { email: string }) =>
     unwrap<void>(await axiosInstance.post("/auth/forgot-password", payload)),
