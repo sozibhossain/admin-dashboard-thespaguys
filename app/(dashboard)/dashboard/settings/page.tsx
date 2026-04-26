@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Eye, EyeOff, Pencil } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Camera, Eye, EyeOff, Pencil } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -14,11 +14,17 @@ import { parseNameParts } from "@/lib/utils";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [activeTab, setActiveTab] = useState<"personal" | "password">("personal");
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+
   const profileQuery = useQuery({
     queryKey: ["profile"],
     queryFn: api.getProfile,
   });
+
   const settingsQuery = useQuery({
     queryKey: ["platform-settings"],
     queryFn: api.getSettings,
@@ -35,11 +41,13 @@ export default function SettingsPage() {
     email: "",
     phone: "",
   });
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
@@ -49,18 +57,27 @@ export default function SettingsPage() {
   const profileMutation = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
+
       formData.append(
         "name",
         `${profileForm.firstName || nameParts.firstName} ${
           profileForm.lastName || nameParts.lastName
         }`.trim(),
       );
+
       formData.append("email", profileForm.email || profileQuery.data?.user.email || "");
       formData.append("phone", profileForm.phone || profileQuery.data?.user.phone || "");
+
+      if (selectedAvatar) {
+        formData.append("avatar", selectedAvatar);
+      }
+
       return api.updateProfile(formData);
     },
     onSuccess: () => {
       toast.success("Profile updated");
+      setSelectedAvatar(null);
+      setAvatarPreview("");
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -70,10 +87,32 @@ export default function SettingsPage() {
     mutationFn: () => api.changePassword(passwordForm),
     onSuccess: () => {
       toast.success("Password changed");
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
+
+  function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file");
+      return;
+    }
+
+    setSelectedAvatar(file);
+    setAvatarPreview(URL.createObjectURL(file));
+
+    setTimeout(() => {
+      profileMutation.mutate();
+    }, 100);
+  }
 
   return (
     <div>
@@ -91,6 +130,7 @@ export default function SettingsPage() {
         >
           Personal Information
         </button>
+
         <button
           className={`h-14 rounded-2xl border text-[18px] font-semibold ${
             activeTab === "password"
@@ -115,7 +155,35 @@ export default function SettingsPage() {
           </div>
         ) : (
           <div className="flex items-center gap-5">
-            <Avatar className="size-28" name={profileQuery.data?.user.name} src={profileQuery.data?.user.avatar} />
+            <div
+              className="group relative size-28 cursor-pointer overflow-hidden rounded-full"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Avatar
+                className="size-28"
+                name={profileQuery.data?.user.name}
+                src={avatarPreview || profileQuery.data?.user.avatar}
+              />
+
+              <div className="absolute inset-0 hidden items-center justify-center bg-black/55 group-hover:flex">
+                <Camera className="size-8 text-white" />
+              </div>
+
+              {profileMutation.isPending && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-xs text-white">
+                  Uploading...
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+
             <div>
               <p className="text-[28px] font-medium">{profileQuery.data?.user.name}</p>
               <p className="text-[18px] text-[#b7b7b7]">Super admin</p>
@@ -134,48 +202,65 @@ export default function SettingsPage() {
                 Edit
               </Button>
             </div>
+
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <label className="mb-3 block text-[18px]">First Name</label>
                 <Input
                   className="border-[#6e6e6e] bg-[#0f0f0f]"
                   onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, firstName: event.target.value }))
+                    setProfileForm((current) => ({
+                      ...current,
+                      firstName: event.target.value,
+                    }))
                   }
                   value={profileForm.firstName || nameParts.firstName}
                 />
               </div>
+
               <div>
                 <label className="mb-3 block text-[18px]">Last Name</label>
                 <Input
                   className="border-[#6e6e6e] bg-[#0f0f0f]"
                   onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, lastName: event.target.value }))
+                    setProfileForm((current) => ({
+                      ...current,
+                      lastName: event.target.value,
+                    }))
                   }
                   value={profileForm.lastName || nameParts.lastName}
                 />
               </div>
+
               <div>
                 <label className="mb-3 block text-[18px]">Email Address</label>
                 <Input
                   className="border-[#6e6e6e] bg-[#0f0f0f]"
                   onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, email: event.target.value }))
+                    setProfileForm((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
                   }
                   value={profileForm.email || profileQuery.data?.user.email || ""}
                 />
               </div>
+
               <div>
                 <label className="mb-3 block text-[18px]">Phone</label>
                 <Input
                   className="border-[#6e6e6e] bg-[#0f0f0f]"
                   onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, phone: event.target.value }))
+                    setProfileForm((current) => ({
+                      ...current,
+                      phone: event.target.value,
+                    }))
                   }
                   value={profileForm.phone || profileQuery.data?.user.phone || ""}
                 />
               </div>
             </div>
+
             <div className="mt-8 flex justify-end">
               <Button onClick={() => profileMutation.mutate()}>
                 {profileMutation.isPending ? "Saving..." : "Save Changes"}
@@ -191,6 +276,7 @@ export default function SettingsPage() {
                 Edit
               </Button>
             </div>
+
             <div className="grid gap-6 md:grid-cols-3">
               <div>
                 <label className="mb-3 block text-[18px]">Current Password</label>
@@ -208,13 +294,23 @@ export default function SettingsPage() {
                   />
                   <button
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-white"
-                    onClick={() => setShowPasswords((s) => ({ ...s, currentPassword: !s.currentPassword }))}
+                    onClick={() =>
+                      setShowPasswords((s) => ({
+                        ...s,
+                        currentPassword: !s.currentPassword,
+                      }))
+                    }
                     type="button"
                   >
-                    {showPasswords.currentPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                    {showPasswords.currentPassword ? (
+                      <EyeOff className="size-5" />
+                    ) : (
+                      <Eye className="size-5" />
+                    )}
                   </button>
                 </div>
               </div>
+
               <div>
                 <label className="mb-3 block text-[18px]">New Password</label>
                 <div className="relative">
@@ -231,13 +327,23 @@ export default function SettingsPage() {
                   />
                   <button
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-white"
-                    onClick={() => setShowPasswords((s) => ({ ...s, newPassword: !s.newPassword }))}
+                    onClick={() =>
+                      setShowPasswords((s) => ({
+                        ...s,
+                        newPassword: !s.newPassword,
+                      }))
+                    }
                     type="button"
                   >
-                    {showPasswords.newPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                    {showPasswords.newPassword ? (
+                      <EyeOff className="size-5" />
+                    ) : (
+                      <Eye className="size-5" />
+                    )}
                   </button>
                 </div>
               </div>
+
               <div>
                 <label className="mb-3 block text-[18px]">Confirm New Password</label>
                 <div className="relative">
@@ -254,14 +360,24 @@ export default function SettingsPage() {
                   />
                   <button
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8f8f8f] hover:text-white"
-                    onClick={() => setShowPasswords((s) => ({ ...s, confirmPassword: !s.confirmPassword }))}
+                    onClick={() =>
+                      setShowPasswords((s) => ({
+                        ...s,
+                        confirmPassword: !s.confirmPassword,
+                      }))
+                    }
                     type="button"
                   >
-                    {showPasswords.confirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                    {showPasswords.confirmPassword ? (
+                      <EyeOff className="size-5" />
+                    ) : (
+                      <Eye className="size-5" />
+                    )}
                   </button>
                 </div>
               </div>
             </div>
+
             <div className="mt-8 flex justify-between gap-4 rounded-2xl bg-[#202020] p-5">
               <div>
                 <p className="text-sm text-[#b7b7b7]">Platform Tax Rate</p>
@@ -269,6 +385,7 @@ export default function SettingsPage() {
                   {settingsQuery.data?.settings.taxRate ?? 0}
                 </p>
               </div>
+
               <div>
                 <p className="text-sm text-[#b7b7b7]">Maintenance Mode</p>
                 <p className="mt-2 text-[20px] font-medium">
@@ -276,6 +393,7 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+
             <div className="mt-8 flex justify-end">
               <Button onClick={() => passwordMutation.mutate()}>
                 {passwordMutation.isPending ? "Saving..." : "Save Changes"}

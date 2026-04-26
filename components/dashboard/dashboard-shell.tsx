@@ -16,10 +16,12 @@ import {
   UserSearch,
   X,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -69,8 +71,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: api.getProfile,
+    enabled: !!session,
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const displayName = profile?.user?.name || session?.user?.name || "Rain Altmann";
+  const displayEmail = profile?.user?.email || session?.user?.email;
+  const displayAvatar = profile?.user?.avatar || session?.user?.avatar;
 
   async function handleLogout() {
     setLogoutOpen(false);
@@ -105,7 +116,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-[100px] items-center justify-between border-b border-[#202020] px-4 md:px-8">
+          <header className="sticky top-0 z-20 flex h-[100px] items-center justify-between border-b border-[#202020] bg-[#141414] px-4 md:px-8">
             <button
               className="rounded-xl border border-[#3a3a3a] p-3 lg:hidden"
               onClick={() => setSidebarOpen(true)}
@@ -117,14 +128,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             <div className="ml-auto flex items-center gap-4">
               <div className="text-right">
                 <p className="font-[family-name:var(--font-steki)] text-[16px] uppercase tracking-[0.02em] text-[#d5d5d5]">
-                  {session?.user?.name || "Rain Altmann"}
+                  {displayName}
                 </p>
-                <p className="text-xs text-[#7f7f7f]">{session?.user?.email}</p>
+                <p className="text-xs text-[#7f7f7f]">{displayEmail}</p>
               </div>
               <Avatar
                 className="size-12 border border-[#3a3a3a]"
-                name={session?.user?.name}
-                src={session?.user?.avatar}
+                name={displayName}
+                src={displayAvatar}
               />
             </div>
           </header>
