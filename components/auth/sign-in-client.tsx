@@ -16,13 +16,8 @@ export function SignInClient({ initialError }: { initialError?: string }) {
   const [isPending, setIsPending] = useState(false);
 
   const [form, setForm] = useState({
-<<<<<<< HEAD
-    email: "admin@gmail.com",
-    password: "Password1!",
-=======
     email: "",
     password: "",
->>>>>>> e86a8c2a0306743a0e02176fdce38edfeb840897
   });
 
   useEffect(() => {
@@ -75,9 +70,7 @@ export function SignInClient({ initialError }: { initialError?: string }) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[16px] font-medium text-white">
-            Password
-          </label>
+          <label className="text-[16px] font-medium text-white">Password</label>
 
           <div className="relative">
             <Input
