@@ -71,7 +71,11 @@ export const api = {
     unwrap<void>(await axiosInstance.post("/auth/forgot-password", payload)),
   verifyOtp: async (payload: { email: string; code: string; purpose: "forgot_password" }) =>
     unwrap<{ resetToken: string }>(await axiosInstance.post("/auth/verify-otp", payload)),
-  resetPassword: async (payload: { email: string; otp: string; password: string }) =>
+  resetPassword: async (payload: {
+    resetToken: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) =>
     unwrap<void>(await axiosInstance.post("/auth/reset-password", payload)),
   logout: async () => unwrap<void>(await axiosInstance.post("/auth/logout")),
   getProfile: async () => unwrap<{ user: User }>(await axiosInstance.get("/users/profile")),

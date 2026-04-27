@@ -11,10 +11,10 @@ import { api, getApiErrorMessage } from "@/lib/api";
 
 export function ChangePasswordClient({
   email,
-  otp,
+  resetToken,
 }: {
   email: string;
-  otp: string;
+  resetToken: string;
 }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -36,9 +36,9 @@ export function ChangePasswordClient({
     setIsPending(true);
     try {
       await api.resetPassword({
-        email: form.email,
-        otp,
-        password: form.password,
+        resetToken,
+        newPassword: form.password,
+        confirmPassword: form.confirmPassword,
       });
       toast.success("Password reset successfully");
       router.push("/sign-in");

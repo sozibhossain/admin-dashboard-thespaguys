@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
+import { api, getApiErrorMessage } from "@/lib/api";
 
 export function EnterCodeClient({ email }: { email: string }) {
   const router = useRouter();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const [isPending, setIsPending] = useState(false);
   const code = useMemo(() => digits.join(""), [digits]);
 
   function updateDigit(index: number, value: string) {
@@ -16,14 +18,28 @@ export function EnterCodeClient({ email }: { email: string }) {
     setDigits((current) => current.map((digit, idx) => (idx === index ? clean : digit)));
   }
 
-  function handleVerify() {
+  async function handleVerify() {
     if (code.length !== 6) {
       toast.error("Enter the 6-digit code");
       return;
     }
-    router.push(
-      `/change-password?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(code)}`,
-    );
+    setIsPending(true);
+    try {
+      const data = await api.verifyOtp({
+        email,
+        code,
+        purpose: "forgot_password",
+      });
+      router.push(
+        `/change-password?email=${encodeURIComponent(email)}&resetToken=${encodeURIComponent(
+          data.resetToken,
+        )}`,
+      );
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (
@@ -46,8 +62,13 @@ export function EnterCodeClient({ email }: { email: string }) {
           ))}
         </div>
         <p className="mb-16 text-center text-sm text-[#c8c8c8]">Resend code in 43s</p>
-        <Button className="h-14 w-full text-[18px]" onClick={handleVerify} type="button">
-          Verify Code
+        <Button
+          className="h-14 w-full text-[18px]"
+          disabled={isPending}
+          onClick={handleVerify}
+          type="button"
+        >
+          {isPending ? "Verifying..." : "Verify Code"}
         </Button>
       </div>
     </AuthCard>

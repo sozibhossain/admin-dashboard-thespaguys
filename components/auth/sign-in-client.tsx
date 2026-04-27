@@ -16,7 +16,7 @@ export function SignInClient({ initialError }: { initialError?: string }) {
   const [isPending, setIsPending] = useState(false);
   const [form, setForm] = useState({
     email: "admin@gmail.com",
-    password: "123456",
+    password: "Password1!",
   });
 
   useEffect(() => {
