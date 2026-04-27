@@ -83,6 +83,38 @@ function renderPieLabel(props: PieLabelRenderProps) {
   );
 }
 
+function RevenueTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+  label?: string | number;
+}) {
+  if (!active || !payload?.length) return null;
+  const value = Number(payload[0]?.value ?? 0);
+  return (
+    <div className="flex flex-col items-center">
+      <div className="rounded-xl border border-[#3a3a3a] bg-[#1c1c1c] px-4 py-2.5 text-center shadow-lg">
+        {label ? (
+          <p className="text-[10px] font-medium uppercase tracking-widest text-[#6a6a6a]">{label}</p>
+        ) : null}
+        <p className="mt-0.5 text-[14px] font-semibold text-white">{formatCurrency(value)}</p>
+      </div>
+      <div
+        style={{
+          width: 0,
+          height: 0,
+          borderLeft: "7px solid transparent",
+          borderRight: "7px solid transparent",
+          borderTop: "7px solid #3a3a3a",
+        }}
+      />
+    </div>
+  );
+}
+
 const tooltipStyle = {
   contentStyle: { background: "#1e1e1e", border: "1px solid #3a3a3a", borderRadius: 8, color: "#fff" },
   labelStyle: { color: "#9b9b9b" },
@@ -143,7 +175,7 @@ export default function OverviewPage() {
     requestMixQuery.data?.data.map((item, index) => ({
       name: item._id,
       value: item.count,
-      color: ["#ffd04e", "#c89900", "#8d6a00", "#6f5600"][index % 4],
+      color: ["#ffd04e", "#c89900", "#8d6a00", "#6f5600", "#3e3000"][index % 5],
     })) ?? [];
 
   return (
@@ -297,10 +329,15 @@ export default function OverviewPage() {
                   </defs>
                   <CartesianGrid stroke="#2e2e2e" vertical={false} />
                   <XAxis dataKey="name" {...axisProps} />
-                  <YAxis {...axisProps} />
+                  <YAxis
+                    {...axisProps}
+                    tickFormatter={(v: number) =>
+                      v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`
+                    }
+                  />
                   <Tooltip
-                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
-                    {...tooltipStyle}
+                    content={<RevenueTooltip />}
+                    cursor={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
                   />
                   <Area
                     dataKey="value"
@@ -308,6 +345,7 @@ export default function OverviewPage() {
                     stroke="#f4c542"
                     strokeWidth={2.5}
                     type="monotone"
+                    activeDot={{ r: 5, fill: "#f4c542", stroke: "#fff", strokeWidth: 2 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>

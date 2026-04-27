@@ -64,10 +64,11 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        role: { label: "Role", type: "hidden" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          throw new Error("Email and password are required");
+        if (!credentials?.email || !credentials.password || !credentials.role) {
+          throw new Error("Email, password, and role are required");
         }
 
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -78,6 +79,7 @@ export const authOptions: NextAuthOptions = {
           body: JSON.stringify({
             email: credentials.email,
             password: credentials.password,
+            role: credentials.role,
           }),
           cache: "no-store",
         });

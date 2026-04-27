@@ -28,19 +28,33 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthCard title="Forgot password?" subtitle="Enter your email to recover your password">
-      <form className="mx-auto max-w-[664px] space-y-14" onSubmit={handleSubmit}>
+    <AuthCard
+      title="Forgot password?"
+      subtitle="Enter your email to recover your password"
+    >
+      <form
+        className="mx-auto max-w-[664px] space-y-14"
+        onSubmit={handleSubmit}
+      >
         <div className="space-y-2">
-          <label className="text-[16px] font-medium text-white">Email</label>
-          <Input
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="Email"
-            type="email"
-            required
-          />
+          <div>
+            <label className="text-[16px] font-medium text-white">Email</label>
+          </div>
+          <div>
+            <Input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Email"
+              type="email"
+              required
+            />
+          </div>
         </div>
-        <Button className="h-14 w-full text-[18px]" disabled={isPending} type="submit">
+        <Button
+          className="h-14 w-full text-[18px]"
+          disabled={isPending}
+          type="submit"
+        >
           {isPending ? "Sending..." : "Send OTP"}
         </Button>
       </form>

@@ -50,25 +50,22 @@ export function ChangePasswordClient({
   }
 
   return (
-    <AuthCard title="Change Password" subtitle="Change your password">
+    <AuthCard title="Reset Password" subtitle="reset your password">
       <form className="mx-auto max-w-[664px] space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label className="text-[16px] font-medium text-white">Email</label>
-          <Input
-            value={form.email}
-            onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-            placeholder="Email"
-            type="email"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-[16px] font-medium text-white">New Password</label>
+          <div>
+            <label className="text-[16px] font-medium text-white">
+              New Password
+            </label>
+          </div>
           <div className="relative">
             <Input
               value={form.password}
               onChange={(event) =>
-                setForm((current) => ({ ...current, password: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  password: event.target.value,
+                }))
               }
               placeholder="Password"
               type={showPassword ? "text" : "password"}
@@ -80,17 +77,28 @@ export function ChangePasswordClient({
               onClick={() => setShowPassword((current) => !current)}
               type="button"
             >
-              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              {showPassword ? (
+                <EyeOff className="size-5" />
+              ) : (
+                <Eye className="size-5" />
+              )}
             </button>
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-[16px] font-medium text-white">Confirm Password</label>
+          <div>
+            <label className="text-[16px] font-medium text-white">
+              Confirm Password
+            </label>
+          </div>
           <div className="relative">
             <Input
               value={form.confirmPassword}
               onChange={(event) =>
-                setForm((current) => ({ ...current, confirmPassword: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  confirmPassword: event.target.value,
+                }))
               }
               placeholder="Password"
               type={showConfirmPassword ? "text" : "password"}
@@ -102,12 +110,20 @@ export function ChangePasswordClient({
               onClick={() => setShowConfirmPassword((current) => !current)}
               type="button"
             >
-              {showConfirmPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              {showConfirmPassword ? (
+                <EyeOff className="size-5" />
+              ) : (
+                <Eye className="size-5" />
+              )}
             </button>
           </div>
         </div>
         <div className="pt-14">
-          <Button className="h-14 w-full text-[18px]" disabled={isPending} type="submit">
+          <Button
+            className="h-14 w-full text-[18px]"
+            disabled={isPending}
+            type="submit"
+          >
             {isPending ? "Saving..." : "Confirm"}
           </Button>
         </div>
