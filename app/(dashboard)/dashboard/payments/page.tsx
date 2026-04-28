@@ -17,11 +17,23 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function PaymentsPage() {
   const [page, setPage] = useState(1);
-  const [selectedServiceRequestId, setSelectedServiceRequestId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [type, setType] = useState("");
+  const [selectedServiceRequestId, setSelectedServiceRequestId] = useState<
+    string | null
+  >(null);
 
   const paymentsQuery = useQuery({
-    queryKey: ["payments", page],
-    queryFn: () => api.getPayments({ page, limit: 10 }),
+    queryKey: ["payments", page, search, status, type],
+    queryFn: () =>
+      api.getPayments({
+        page,
+        limit: 10,
+        search: search || undefined,
+        status: status || undefined,
+        type: type || undefined,
+      }),
   });
 
   const detailQuery = useQuery({
@@ -33,18 +45,47 @@ export default function PaymentsPage() {
   return (
     <div>
       <PageHeader
-        title="User Management"
-        breadcrumb="Dashboard  >  Service Request"
+        title="Payment Management"
+        breadcrumb="Dashboard  >  Payments"
         actions={
-          <div className="grid gap-3 sm:grid-cols-[360px_150px]">
+          <div className="grid gap-3 sm:grid-cols-[320px_150px_170px]">
             <div className="relative">
-              <Input className="border-[#6e6e6e] bg-[#181818] pr-14" placeholder="Search" />
+              <Input
+                className="border-[#6e6e6e] bg-[#181818] pr-14"
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search"
+                value={search}
+              />
               <div className="gold-gradient absolute right-0 top-0 flex h-14 w-16 items-center justify-center rounded-r-xl">
                 <Search className="size-5" />
               </div>
             </div>
-            <Select defaultValue="">
+            <Select
+              onChange={(event) => {
+                setStatus(event.target.value);
+                setPage(1);
+              }}
+              value={status}
+            >
               <option value="">All</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </Select>
+            <Select
+              onChange={(event) => {
+                setType(event.target.value);
+                setPage(1);
+              }}
+              value={type}
+            >
+              <option value="">All types</option>
+              <option value="service_fee">Service fee</option>
+              <option value="additional_cost">Additional cost</option>
             </Select>
           </div>
         }
@@ -59,13 +100,19 @@ export default function PaymentsPage() {
               <table className="min-w-full">
                 <thead className="bg-[#2a2a2a] text-left text-[16px] font-medium text-white">
                   <tr>
-                    {["User Name", "Technician's Name", "Service", "Location", "Payment", "Status", "Action"].map(
-                      (heading) => (
-                        <th className="px-6 py-5" key={heading}>
-                          {heading}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      "Customer",
+                      "Service Request",
+                      "Payment Type",
+                      "Customer Email",
+                      "Amount",
+                      "Status",
+                      "Action",
+                    ].map((heading) => (
+                      <th className="px-6 py-5" key={heading}>
+                        {heading}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -73,22 +120,36 @@ export default function PaymentsPage() {
                     <tr className="border-t border-[#343434]" key={payment._id}>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          <Avatar className="size-11" name={payment.customer.name} />
+                          <Avatar
+                            className="size-11"
+                            name={payment.customer.name}
+                          />
                           <span>{payment.customer.name}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-[#d4d4d4]">
-                        {payment.serviceRequest?.serviceType || "Spa Repair Technician"}
+                        {payment.serviceRequest?.serviceType ||
+                          "Spa Repair Technician"}
                       </td>
-                      <td className="px-6 py-5 text-[#d4d4d4]">{payment.type}</td>
-                      <td className="px-6 py-5 text-[#d4d4d4]">{payment.customer.email}</td>
-                      <td className="px-6 py-5 text-[#d4d4d4]">{formatCurrency(payment.amount)}</td>
+                      <td className="px-6 py-5 text-[#d4d4d4]">
+                        {payment.type.replaceAll("_", " ")}
+                      </td>
+                      <td className="px-6 py-5 text-[#d4d4d4]">
+                        {payment.customer.email}
+                      </td>
+                      <td className="px-6 py-5 text-[#d4d4d4]">
+                        {formatCurrency(payment.amount)}
+                      </td>
                       <td className="px-6 py-5">
                         <StatusBadge value={payment.status} />
                       </td>
                       <td className="px-6 py-5">
                         <button
-                          onClick={() => setSelectedServiceRequestId(payment.serviceRequest._id)}
+                          onClick={() =>
+                            setSelectedServiceRequestId(
+                              payment.serviceRequest._id,
+                            )
+                          }
                           type="button"
                         >
                           <Eye className="size-5" />
@@ -102,7 +163,9 @@ export default function PaymentsPage() {
 
             <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <p className="text-[#9b9b9b]">
-                Showing {(page - 1) * 10 + 1} to {(page - 1) * 10 + (paymentsQuery.data?.payments.length ?? 0)} of {paymentsQuery.data?.total ?? 0} results
+                Showing {(page - 1) * 10 + 1} to{" "}
+                {(page - 1) * 10 + (paymentsQuery.data?.payments.length ?? 0)}{" "}
+                of {paymentsQuery.data?.total ?? 0} results
               </p>
               <Pagination
                 page={page}
@@ -114,26 +177,38 @@ export default function PaymentsPage() {
         )}
       </section>
 
-      <Modal open={!!selectedServiceRequestId} onClose={() => setSelectedServiceRequestId(null)} className="max-w-[1400px]">
+      <Modal
+        open={!!selectedServiceRequestId}
+        onClose={() => setSelectedServiceRequestId(null)}
+        className="max-w-[1400px]"
+      >
         {detailQuery.data?.request ? (
           <div className="grid gap-8 xl:grid-cols-[1.4fr_0.9fr]">
             <div>
               <h2 className="mb-8 text-[30px] font-medium">Order summary</h2>
               <div className="space-y-6">
                 <div>
-                  <label className="mb-3 block text-[18px] font-semibold">Presenting Problem</label>
+                  <label className="mb-3 block text-[18px] font-semibold">
+                    Presenting Problem
+                  </label>
                   <div className="rounded-2xl bg-[#6b6b6b] p-5 text-[18px] text-white">
-                    {detailQuery.data.request.presentingProblem || detailQuery.data.request.problemDescription}
+                    {detailQuery.data.request.presentingProblem ||
+                      detailQuery.data.request.problemDescription}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-3 block text-[18px] font-semibold">Diagnosis</label>
+                  <label className="mb-3 block text-[18px] font-semibold">
+                    Diagnosis
+                  </label>
                   <div className="rounded-2xl bg-[#6b6b6b] p-5 text-[18px] text-white">
-                    {detailQuery.data.request.diagnosis || "No diagnosis was added."}
+                    {detailQuery.data.request.diagnosis ||
+                      "No diagnosis was added."}
                   </div>
                 </div>
                 <div>
-                  <label className="mb-3 block text-[18px] font-semibold">Post Service Documentation</label>
+                  <label className="mb-3 block text-[18px] font-semibold">
+                    Post Service Documentation
+                  </label>
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     {(detailQuery.data.request.postServicePhotos?.length
                       ? detailQuery.data.request.postServicePhotos
@@ -150,15 +225,22 @@ export default function PaymentsPage() {
                 {detailQuery.data.request.additionalCosts.map((cost) => (
                   <div className="rounded-2xl bg-[#6b6b6b] p-5" key={cost._id}>
                     <div className="flex justify-between">
-                      <p className="text-[18px] font-semibold text-[#ffc737]">{cost.name}</p>
+                      <p className="text-[18px] font-semibold text-[#ffc737]">
+                        {cost.name}
+                      </p>
                       <p className="text-[18px] font-semibold text-[#ffc737]">
                         {formatCurrency(cost.amount)}
                       </p>
                     </div>
-                    <p className="mt-3 text-[16px] text-[#efefef]">{cost.notes || cost.description}</p>
+                    <p className="mt-3 text-[16px] text-[#efefef]">
+                      {cost.notes || cost.description}
+                    </p>
                   </div>
                 ))}
-                <Button className="h-16 w-full text-[18px]" onClick={() => setSelectedServiceRequestId(null)}>
+                <Button
+                  className="h-16 w-full text-[18px]"
+                  onClick={() => setSelectedServiceRequestId(null)}
+                >
                   Done
                 </Button>
               </div>
@@ -175,10 +257,17 @@ export default function PaymentsPage() {
                   />
                   <div>
                     <p className="text-[18px] text-[#ffc737]">
-                      {detailQuery.data.request.assignedTechnician?.name || "Unassigned"}
+                      {detailQuery.data.request.assignedTechnician?.name ||
+                        "Unassigned"}
                     </p>
                     <p className="text-sm">
-                      ★ {detailQuery.data.request.assignedTechnician?.rating?.average ?? 0} ({detailQuery.data.request.assignedTechnician?.rating?.count ?? 0} reviews)
+                      ★{" "}
+                      {detailQuery.data.request.assignedTechnician?.rating
+                        ?.average ?? 0}{" "}
+                      (
+                      {detailQuery.data.request.assignedTechnician?.rating
+                        ?.count ?? 0}{" "}
+                      reviews)
                     </p>
                   </div>
                 </div>
@@ -188,11 +277,15 @@ export default function PaymentsPage() {
                 <div className="mt-6 space-y-4 text-[18px] text-[#ececec]">
                   <div className="flex justify-between">
                     <span>Service Fee</span>
-                    <span>{formatCurrency(detailQuery.data.request.serviceFee)}</span>
+                    <span>
+                      {formatCurrency(detailQuery.data.request.serviceFee)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Facility Tax</span>
-                    <span>{formatCurrency(detailQuery.data.request.facilityTax)}</span>
+                    <span>
+                      {formatCurrency(detailQuery.data.request.facilityTax)}
+                    </span>
                   </div>
                   {detailQuery.data.request.additionalCosts.map((cost) => (
                     <div className="flex justify-between" key={cost._id}>
@@ -219,8 +312,12 @@ export default function PaymentsPage() {
               </div>
               <div className="rounded-[22px] bg-[#6a6a6a] p-6">
                 <p className="text-sm text-[#d6d6d6]">Service Date</p>
-                <p className="mt-3 text-[18px]">{formatDate(detailQuery.data.request.scheduledDate)}</p>
-                <p className="mt-1 text-[#d6d6d6]">{detailQuery.data.request.scheduledTime}</p>
+                <p className="mt-3 text-[18px]">
+                  {formatDate(detailQuery.data.request.scheduledDate)}
+                </p>
+                <p className="mt-1 text-[#d6d6d6]">
+                  {detailQuery.data.request.scheduledTime}
+                </p>
               </div>
             </div>
           </div>

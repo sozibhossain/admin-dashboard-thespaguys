@@ -14,11 +14,13 @@ import { formatDate } from "@/lib/utils";
 export default function UserChatPage() {
   const params = useParams<{ id: string }>();
   const [page] = useState(1);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
 
   const userQuery = useQuery({
-    queryKey: ["user-detail", params.id],
-    queryFn: () => api.getUserDetail(params.id),
+    queryKey: ["account-detail", params.id],
+    queryFn: () => api.getAccountDetail(params.id),
   });
 
   const chatsQuery = useQuery({
@@ -27,18 +29,22 @@ export default function UserChatPage() {
   });
 
   const selectedConversation =
-    chatsQuery.data?.conversations.find((conversation) => conversation._id === selectedConversationId) ??
-    chatsQuery.data?.conversations[0];
+    chatsQuery.data?.conversations.find(
+      (conversation) => conversation._id === selectedConversationId,
+    ) ?? chatsQuery.data?.conversations[0];
 
   const otherParticipant = useMemo(
     () =>
-      selectedConversation?.participants.find((participant) => participant._id !== params.id),
+      selectedConversation?.participants.find(
+        (participant) => participant._id !== params.id,
+      ),
     [params.id, selectedConversation],
   );
 
   const messagesQuery = useQuery({
     queryKey: ["messages", selectedConversation?._id],
-    queryFn: () => api.getMessages(selectedConversation!._id, { page: 1, limit: 50 }),
+    queryFn: () =>
+      api.getMessages(selectedConversation!._id, { page: 1, limit: 50 }),
     enabled: !!selectedConversation?._id,
   });
 
@@ -59,7 +65,9 @@ export default function UserChatPage() {
                   src={userQuery.data?.user.avatar}
                 />
                 <div>
-                  <p className="text-[18px] font-semibold">{userQuery.data?.user.name}</p>
+                  <p className="text-[18px] font-semibold">
+                    {userQuery.data?.user.name}
+                  </p>
                   <p className="flex items-center gap-2 text-[#9d9d9d]">
                     {userQuery.data?.user.email}
                     <ChevronRight className="size-4" />
@@ -90,10 +98,14 @@ export default function UserChatPage() {
                   return (
                     <button
                       className={`flex w-full items-center gap-4 rounded-2xl px-4 py-4 text-left ${
-                        selectedConversation?._id === conversation._id ? "bg-[#181818]" : ""
+                        selectedConversation?._id === conversation._id
+                          ? "bg-[#181818]"
+                          : ""
                       }`}
                       key={conversation._id}
-                      onClick={() => setSelectedConversationId(conversation._id)}
+                      onClick={() =>
+                        setSelectedConversationId(conversation._id)
+                      }
                       type="button"
                     >
                       <Avatar
@@ -102,9 +114,13 @@ export default function UserChatPage() {
                         src={participant?.avatar}
                       />
                       <div className="flex-1">
-                        <p className="text-[18px] font-medium">{participant?.name}</p>
+                        <p className="text-[18px] font-medium">
+                          {participant?.name}
+                        </p>
                         <p className="text-sm text-[#8f8f8f]">
-                          {participant?.serviceName || participant?.specialization || "Conversation"}
+                          {participant?.serviceName ||
+                            participant?.specialization ||
+                            "Conversation"}
                         </p>
                       </div>
                       <div className="text-sm text-[#c8c8c8]">
@@ -145,10 +161,14 @@ export default function UserChatPage() {
                     >
                       <div
                         className={`max-w-[70%] rounded-[20px] px-5 py-4 ${
-                          isUser ? "gold-gradient text-white" : "bg-[#474747] text-white"
+                          isUser
+                            ? "gold-gradient text-white"
+                            : "bg-[#474747] text-white"
                         }`}
                       >
-                        <p className="text-[16px] leading-[1.25]">{message.content || message.type}</p>
+                        <p className="text-[16px] leading-[1.25]">
+                          {message.content || message.type}
+                        </p>
                         <p className="mt-3 text-right text-xs opacity-70">
                           {formatDate(message.createdAt, "hh:mm a")}
                         </p>

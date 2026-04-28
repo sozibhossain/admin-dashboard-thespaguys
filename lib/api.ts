@@ -69,16 +69,22 @@ export const api = {
     unwrap<AuthPayload>(await axiosInstance.post("/auth/login", payload)),
   forgotPassword: async (payload: { email: string }) =>
     unwrap<void>(await axiosInstance.post("/auth/forgot-password", payload)),
-  verifyOtp: async (payload: { email: string; code: string; purpose: "forgot_password" }) =>
-    unwrap<{ resetToken: string }>(await axiosInstance.post("/auth/verify-otp", payload)),
+  verifyOtp: async (payload: {
+    email: string;
+    code: string;
+    purpose: "forgot_password";
+  }) =>
+    unwrap<{ resetToken: string }>(
+      await axiosInstance.post("/auth/verify-otp", payload),
+    ),
   resetPassword: async (payload: {
     resetToken: string;
     newPassword: string;
     confirmPassword: string;
-  }) =>
-    unwrap<void>(await axiosInstance.post("/auth/reset-password", payload)),
+  }) => unwrap<void>(await axiosInstance.post("/auth/reset-password", payload)),
   logout: async () => unwrap<void>(await axiosInstance.post("/auth/logout")),
-  getProfile: async () => unwrap<{ user: User }>(await axiosInstance.get("/users/profile")),
+  getProfile: async () =>
+    unwrap<{ user: User }>(await axiosInstance.get("/users/profile")),
   updateProfile: async (payload: FormData) =>
     unwrap<{ user: User }>(
       await axiosInstance.patch("/users/profile", payload, {
@@ -91,11 +97,14 @@ export const api = {
     currentPassword: string;
     newPassword: string;
     confirmPassword: string;
-  }) => unwrap<void>(await axiosInstance.patch("/auth/change-password", payload)),
+  }) =>
+    unwrap<void>(await axiosInstance.patch("/auth/change-password", payload)),
   getDashboardStats: async () =>
     unwrap<DashboardStats>(await axiosInstance.get("/admin/dashboard")),
   getUsersChart: async () =>
-    unwrap<{ data: ChartPoint[] }>(await axiosInstance.get("/admin/dashboard/users-chart")),
+    unwrap<{ data: ChartPoint[] }>(
+      await axiosInstance.get("/admin/dashboard/users-chart"),
+    ),
   getTechniciansChart: async () =>
     unwrap<{ data: ChartPoint[] }>(
       await axiosInstance.get("/admin/dashboard/technicians-chart"),
@@ -105,11 +114,21 @@ export const api = {
       await axiosInstance.get("/admin/dashboard/service-requests-chart"),
     ),
   getRevenueChart: async () =>
-    unwrap<{ data: ChartPoint[] }>(await axiosInstance.get("/admin/dashboard/revenue-chart")),
+    unwrap<{ data: ChartPoint[] }>(
+      await axiosInstance.get("/admin/dashboard/revenue-chart"),
+    ),
   getTechnicianRankings: async (params: { page: number; limit: number }) =>
-    unwrap<{
-      rankings: Array<User & { completedJobs: number; totalEarnings: number }>;
-    } & PaginatedResponse<User>>(await axiosInstance.get("/admin/dashboard/technician-rankings", { params })),
+    unwrap<
+      {
+        rankings: Array<
+          User & { completedJobs: number; totalEarnings: number }
+        >;
+      } & PaginatedResponse<User>
+    >(
+      await axiosInstance.get("/admin/dashboard/technician-rankings", {
+        params,
+      }),
+    ),
   getUsers: async (params: {
     search?: string;
     status?: string;
@@ -121,19 +140,49 @@ export const api = {
     ),
   getUserDetail: async (id: string) =>
     unwrap<{ user: User }>(await axiosInstance.get(`/admin/users/${id}`)),
+  getAccountDetail: async (id: string) => {
+    try {
+      return unwrap<{ user: User }>(
+        await axiosInstance.get(`/admin/users/${id}`),
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        const data = unwrap<{ technician: User }>(
+          await axiosInstance.get(`/admin/technicians/${id}`),
+        );
+        return { user: data.technician };
+      }
+      throw error;
+    }
+  },
   updateUserStatus: async (id: string, isActive: boolean) =>
-    unwrap<{ user: User }>(await axiosInstance.patch(`/admin/users/${id}/status`, { isActive })),
-  getUserChatHistory: async (id: string, params: { page: number; limit: number }) =>
+    unwrap<{ user: User }>(
+      await axiosInstance.patch(`/admin/users/${id}/status`, { isActive }),
+    ),
+  getUserChatHistory: async (
+    id: string,
+    params: { page: number; limit: number },
+  ) =>
     unwrap<{ conversations: Conversation[] } & PaginatedResponse<Conversation>>(
       await axiosInstance.get(`/admin/users/${id}/chats`, { params }),
     ),
-  getConversations: async (params: { search?: string; page: number; limit: number }) =>
+  getConversations: async (params: {
+    search?: string;
+    page: number;
+    limit: number;
+  }) =>
     unwrap<{ conversations: Conversation[] } & PaginatedResponse<Conversation>>(
       await axiosInstance.get("/chat/conversations", { params }),
     ),
-  getMessages: async (conversationId: string, params: { page: number; limit: number }) =>
+  getMessages: async (
+    conversationId: string,
+    params: { page: number; limit: number },
+  ) =>
     unwrap<{ messages: Message[] } & PaginatedResponse<Message>>(
-      await axiosInstance.get(`/chat/conversations/${conversationId}/messages`, { params }),
+      await axiosInstance.get(
+        `/chat/conversations/${conversationId}/messages`,
+        { params },
+      ),
     ),
   getTechnicians: async (params: {
     search?: string;
@@ -145,13 +194,19 @@ export const api = {
       await axiosInstance.get("/admin/technicians", { params }),
     ),
   getTechnicianDetail: async (id: string) =>
-    unwrap<{ technician: User }>(await axiosInstance.get(`/admin/technicians/${id}`)),
+    unwrap<{ technician: User }>(
+      await axiosInstance.get(`/admin/technicians/${id}`),
+    ),
   updateTechnicianStatus: async (id: string, isActive: boolean) =>
     unwrap<{ technician: User }>(
-      await axiosInstance.patch(`/admin/technicians/${id}/status`, { isActive }),
+      await axiosInstance.patch(`/admin/technicians/${id}/status`, {
+        isActive,
+      }),
     ),
   getRoleVisibility: async () =>
-    unwrap<{ visibility: RoleVisibility }>(await axiosInstance.get("/admin/role-visibility")),
+    unwrap<{ visibility: RoleVisibility }>(
+      await axiosInstance.get("/admin/role-visibility"),
+    ),
   updateRoleVisibility: async (payload: RoleVisibility) =>
     unwrap<{ visibility: RoleVisibility }>(
       await axiosInstance.patch("/admin/role-visibility", payload),
@@ -181,13 +236,24 @@ export const api = {
     },
   ) =>
     unwrap<{ request: ServiceRequest }>(
-      await axiosInstance.patch(`/admin/service-requests/${id}/assign`, payload),
+      await axiosInstance.patch(
+        `/admin/service-requests/${id}/assign`,
+        payload,
+      ),
     ),
   updateServiceRequestStatus: async (id: string, status: string) =>
     unwrap<{ request: ServiceRequest }>(
-      await axiosInstance.patch(`/admin/service-requests/${id}/status`, { status }),
+      await axiosInstance.patch(`/admin/service-requests/${id}/status`, {
+        status,
+      }),
     ),
-  getPayments: async (params: { page: number; limit: number }) =>
+  getPayments: async (params: {
+    search?: string;
+    status?: string;
+    type?: string;
+    page: number;
+    limit: number;
+  }) =>
     unwrap<{ payments: Payment[] } & PaginatedResponse<Payment>>(
       await axiosInstance.get("/admin/payments", { params }),
     ),
@@ -199,9 +265,14 @@ export const api = {
     title: string;
     message: string;
     targetRoles: "customer" | "spaguy" | "all";
-  }) => unwrap<void>(await axiosInstance.post("/admin/notifications/global", payload)),
+  }) =>
+    unwrap<void>(
+      await axiosInstance.post("/admin/notifications/global", payload),
+    ),
   getSettings: async () =>
-    unwrap<{ settings: PlatformSettings }>(await axiosInstance.get("/admin/settings")),
+    unwrap<{ settings: PlatformSettings }>(
+      await axiosInstance.get("/admin/settings"),
+    ),
   updateSettings: async (payload: Partial<PlatformSettings>) =>
     unwrap<{ settings: PlatformSettings }>(
       await axiosInstance.patch("/admin/settings", payload),
