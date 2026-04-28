@@ -96,6 +96,7 @@ export default function ServiceRequestsPage() {
 
   const detail = detailQuery.data?.request;
   const technicians = techniciansQuery.data?.technicians ?? [];
+  const canAssignRequest = detail?.status === "pending";
   const handleStatusChange = (nextStatus: string) => {
     if (!detail || nextStatus === detail.status) return;
     statusMutation.mutate(nextStatus);
@@ -439,6 +440,9 @@ export default function ServiceRequestsPage() {
                   </Button>
                   <Button
                     onClick={() => statusMutation.mutate("cancelled")}
+                    disabled={
+                      detail.status === "cancelled" || statusMutation.isPending
+                    }
                     variant="danger"
                   >
                     Cancel Request
@@ -470,6 +474,7 @@ export default function ServiceRequestsPage() {
                         Technician
                       </label>
                       <Select
+                        disabled={!canAssignRequest}
                         onChange={(event) =>
                           setAssignForm((current) => ({
                             ...current,
@@ -558,6 +563,7 @@ export default function ServiceRequestsPage() {
                           <div className="relative">
                             <Input
                               className="border-transparent bg-[#696969]"
+                              disabled={!canAssignRequest}
                               onChange={(event) =>
                                 setAssignForm((current) => ({
                                   ...current,
@@ -578,6 +584,7 @@ export default function ServiceRequestsPage() {
                           <div className="relative">
                             <Input
                               className="border-transparent bg-[#696969]"
+                              disabled={!canAssignRequest}
                               onChange={(event) =>
                                 setAssignForm((current) => ({
                                   ...current,
@@ -601,6 +608,7 @@ export default function ServiceRequestsPage() {
                         </label>
                         <Input
                           className="border-transparent bg-[#696969]"
+                          disabled={!canAssignRequest}
                           onChange={(event) =>
                             setAssignForm((current) => ({
                               ...current,
@@ -617,6 +625,7 @@ export default function ServiceRequestsPage() {
                         </label>
                         <Input
                           className="border-transparent bg-[#696969]"
+                          disabled={!canAssignRequest}
                           onChange={(event) =>
                             setAssignForm((current) => ({
                               ...current,
@@ -674,8 +683,15 @@ export default function ServiceRequestsPage() {
                     >
                       Cancel
                     </Button>
-                    <Button onClick={() => assignMutation.mutate()}>
-                      {assignMutation.isPending ? "Assigning..." : "Accept"}
+                    <Button
+                      disabled={!canAssignRequest || assignMutation.isPending}
+                      onClick={() => assignMutation.mutate()}
+                    >
+                      {assignMutation.isPending
+                        ? "Assigning..."
+                        : canAssignRequest
+                          ? "Accept"
+                          : "Assignment locked"}
                     </Button>
                   </div>
                 </div>

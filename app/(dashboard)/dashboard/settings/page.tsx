@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Camera, Eye, EyeOff, Pencil } from "lucide-react";
+import { Camera, Eye, EyeOff } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -16,7 +16,9 @@ export default function SettingsPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [activeTab, setActiveTab] = useState<"personal" | "password">("personal");
+  const [activeTab, setActiveTab] = useState<
+    "personal" | "password" | "platform"
+  >("personal");
   const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
 
@@ -47,6 +49,13 @@ export default function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [platformForm, setPlatformForm] = useState<{
+    taxRate: string;
+    maintenanceMode: boolean | null;
+  }>({
+    taxRate: "",
+    maintenanceMode: null,
+  });
 
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
@@ -65,8 +74,14 @@ export default function SettingsPage() {
         }`.trim(),
       );
 
-      formData.append("email", profileForm.email || profileQuery.data?.user.email || "");
-      formData.append("phone", profileForm.phone || profileQuery.data?.user.phone || "");
+      formData.append(
+        "email",
+        profileForm.email || profileQuery.data?.user.email || "",
+      );
+      formData.append(
+        "phone",
+        profileForm.phone || profileQuery.data?.user.phone || "",
+      );
 
       if (selectedAvatar) {
         formData.append("avatar", selectedAvatar);
@@ -96,6 +111,26 @@ export default function SettingsPage() {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const platformSettings = settingsQuery.data?.settings;
+  const platformTaxRate =
+    platformForm.taxRate || String(platformSettings?.taxRate ?? 0);
+  const platformMaintenanceMode =
+    platformForm.maintenanceMode ?? Boolean(platformSettings?.maintenanceMode);
+
+  const platformMutation = useMutation({
+    mutationFn: () =>
+      api.updateSettings({
+        taxRate: Number(platformTaxRate),
+        maintenanceMode: platformMaintenanceMode,
+      }),
+    onSuccess: () => {
+      toast.success("Platform settings updated");
+      setPlatformForm({ taxRate: "", maintenanceMode: null });
+      queryClient.invalidateQueries({ queryKey: ["platform-settings"] });
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
   function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -118,7 +153,7 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" breadcrumb="Dashboard  >  Settings" />
 
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
         <button
           className={`h-14 rounded-2xl border text-[18px] font-semibold ${
             activeTab === "personal"
@@ -141,6 +176,18 @@ export default function SettingsPage() {
           type="button"
         >
           Change Password
+        </button>
+
+        <button
+          className={`h-14 rounded-2xl border text-[18px] font-semibold ${
+            activeTab === "platform"
+              ? "gold-gradient border-[#f4c542] text-white"
+              : "border-[#d4a100] bg-[#2f2a1a] text-[#d4a100]"
+          }`}
+          onClick={() => setActiveTab("platform")}
+          type="button"
+        >
+          Platform
         </button>
       </div>
 
@@ -185,7 +232,9 @@ export default function SettingsPage() {
             />
 
             <div>
-              <p className="text-[28px] font-medium">{profileQuery.data?.user.name}</p>
+              <p className="text-[28px] font-medium">
+                {profileQuery.data?.user.name}
+              </p>
               <p className="text-[18px] text-[#b7b7b7]">Super admin</p>
             </div>
           </div>
@@ -196,11 +245,9 @@ export default function SettingsPage() {
         {activeTab === "personal" ? (
           <div>
             <div className="mb-6 flex items-center justify-between gap-3">
-              <h2 className="text-[22px] font-semibold">Personal Information</h2>
-              <Button variant="primary">
-                <Pencil className="mr-2 size-4" />
-                Edit
-              </Button>
+              <h2 className="text-[22px] font-semibold">
+                Personal Information
+              </h2>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -242,7 +289,9 @@ export default function SettingsPage() {
                       email: event.target.value,
                     }))
                   }
-                  value={profileForm.email || profileQuery.data?.user.email || ""}
+                  value={
+                    profileForm.email || profileQuery.data?.user.email || ""
+                  }
                 />
               </div>
 
@@ -256,7 +305,9 @@ export default function SettingsPage() {
                       phone: event.target.value,
                     }))
                   }
-                  value={profileForm.phone || profileQuery.data?.user.phone || ""}
+                  value={
+                    profileForm.phone || profileQuery.data?.user.phone || ""
+                  }
                 />
               </div>
             </div>
@@ -267,19 +318,17 @@ export default function SettingsPage() {
               </Button>
             </div>
           </div>
-        ) : (
+        ) : activeTab === "password" ? (
           <div>
             <div className="mb-6 flex items-center justify-between gap-3">
               <h2 className="text-[22px] font-semibold">Change Password</h2>
-              <Button variant="primary">
-                <Pencil className="mr-2 size-4" />
-                Edit
-              </Button>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
               <div>
-                <label className="mb-3 block text-[18px]">Current Password</label>
+                <label className="mb-3 block text-[18px]">
+                  Current Password
+                </label>
                 <div className="relative">
                   <Input
                     className="border-[#6e6e6e] bg-[#0f0f0f] pr-12"
@@ -345,7 +394,9 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="mb-3 block text-[18px]">Confirm New Password</label>
+                <label className="mb-3 block text-[18px]">
+                  Confirm New Password
+                </label>
                 <div className="relative">
                   <Input
                     className="border-[#6e6e6e] bg-[#0f0f0f] pr-12"
@@ -378,27 +429,71 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-between gap-4 rounded-2xl bg-[#202020] p-5">
-              <div>
-                <p className="text-sm text-[#b7b7b7]">Platform Tax Rate</p>
-                <p className="mt-2 text-[20px] font-medium">
-                  {settingsQuery.data?.settings.taxRate ?? 0}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-[#b7b7b7]">Maintenance Mode</p>
-                <p className="mt-2 text-[20px] font-medium">
-                  {settingsQuery.data?.settings.maintenanceMode ? "On" : "Off"}
-                </p>
-              </div>
-            </div>
-
             <div className="mt-8 flex justify-end">
               <Button onClick={() => passwordMutation.mutate()}>
                 {passwordMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </div>
+          </div>
+        ) : (
+          <div>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <h2 className="text-[22px] font-semibold">Platform Settings</h2>
+            </div>
+
+            {settingsQuery.isLoading ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                <Skeleton className="h-24 rounded-2xl" />
+                <Skeleton className="h-24 rounded-2xl" />
+              </div>
+            ) : (
+              <>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="mb-3 block text-[18px]">Tax Rate</label>
+                    <Input
+                      className="border-[#6e6e6e] bg-[#0f0f0f]"
+                      min={0}
+                      onChange={(event) =>
+                        setPlatformForm((current) => ({
+                          ...current,
+                          taxRate: event.target.value,
+                        }))
+                      }
+                      step="0.01"
+                      type="number"
+                      value={platformTaxRate}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-3 block text-[18px]">
+                      Maintenance Mode
+                    </label>
+                    <label className="flex h-14 cursor-pointer items-center justify-between rounded-xl border border-[#6e6e6e] bg-[#0f0f0f] px-4">
+                      <span>{platformMaintenanceMode ? "On" : "Off"}</span>
+                      <input
+                        checked={platformMaintenanceMode}
+                        className="size-5 accent-[#d4a100]"
+                        onChange={(event) =>
+                          setPlatformForm((current) => ({
+                            ...current,
+                            maintenanceMode: event.target.checked,
+                          }))
+                        }
+                        type="checkbox"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-end">
+                  <Button onClick={() => platformMutation.mutate()}>
+                    {platformMutation.isPending ? "Saving..." : "Save Settings"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </section>
